@@ -181,7 +181,7 @@ class _DesignPageState extends State<DesignPage> {
                 context,
                 MaterialPageRoute(
                       builder: (context) =>
-                        ChildPage(categories: categories, childName: widget.childName, selectedLanguage: widget.selectedLanguage, ageRange: widget.ageRange),
+                        ChildPage(categories: categories, childName: widget.childName, ageRange: widget.ageRange),
                 ),
               );
             },

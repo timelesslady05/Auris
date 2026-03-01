@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ChildPage extends StatefulWidget {
-  final Map<String, List<Map<String, dynamic>>> categories;
+  final Map<String, List<Map<String, dynamic>>>? categories;
+  final List<Map<String, dynamic>>? words;
   final String childName;
-  final String selectedLanguage;
   final String ageRange;
 
-  ChildPage({required this.categories, required this.childName, required this.selectedLanguage, required this.ageRange});
+  ChildPage({
+    this.categories,
+    this.words,
+    required this.childName,
+    required this.ageRange,
+  });
 
   @override
   _ChildPageState createState() => _ChildPageState();
@@ -16,14 +22,18 @@ class ChildPage extends StatefulWidget {
 class _ChildPageState extends State<ChildPage> {
   FlutterTts flutterTts = FlutterTts();
 
-  late String selectedLanguage;
+  Map<String, List<Map<String, dynamic>>> categories = {};
+  String currentLanguage = "en-US";
   String sentence = "";
 
   @override
   void initState() {
     super.initState();
-    selectedLanguage = widget.selectedLanguage;
-    initTTS();
+    // ensure categories available when words provided
+    if (widget.categories == null && widget.words != null) {
+      categories = {'General': widget.words!};
+    }
+    loadLanguage();
   }
 
   void addToSentence(String word) {
@@ -74,8 +84,13 @@ class _ChildPageState extends State<ChildPage> {
     }
   }
 
-  void initTTS() async {
-    await flutterTts.setLanguage(widget.selectedLanguage);
+  Future<void> loadLanguage() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? savedLang = prefs.getString("saved_language");
+    if (savedLang != null) {
+      currentLanguage = savedLang;
+    }
+    await flutterTts.setLanguage(currentLanguage);
     await flutterTts.setSpeechRate(0.4);
     await flutterTts.setPitch(1.0);
   }
@@ -87,35 +102,11 @@ class _ChildPageState extends State<ChildPage> {
 
   @override
   Widget build(BuildContext context) {
-    final flatWords = widget.categories.values.expand((e) => e).toList();
+    final flatWords = categories.values.expand((e) => e).toList();
     return Scaffold(
       appBar: AppBar(
         title: Text("${widget.childName}'s Board"),
-        actions: [
-          DropdownButton<String>(
-            value: selectedLanguage,
-            dropdownColor: Colors.white,
-            underline: SizedBox(),
-            items: [
-              DropdownMenuItem(value: "en-IN", child: Text("Indian")),
-              DropdownMenuItem(value: "en-GB", child: Text("British")),
-              DropdownMenuItem(value: "en-AU", child: Text("Australian")),
-              DropdownMenuItem(value: "en-US", child: Text("American")),
-              DropdownMenuItem(value: "hi-IN", child: Text("Hindi")),
-              DropdownMenuItem(value: "ta-IN", child: Text("Tamil")),
-              DropdownMenuItem(value: "sv-SE", child: Text("Swedish")),
-              DropdownMenuItem(value: "af-ZA", child: Text("African")),
-            ],
-            onChanged: (value) async {
-              setState(() {
-                selectedLanguage = value!;
-              });
-              await flutterTts.setLanguage(selectedLanguage);
-            },
-          ),
-        ],
-      ),
-      backgroundColor: Colors.yellow.shade50,
+      ),      backgroundColor: Colors.yellow.shade50,
       body: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
@@ -159,18 +150,21 @@ class _ChildPageState extends State<ChildPage> {
               SizedBox(height: 8),
               Wrap(
                 spacing: 8,
-                children: getSuggestions(
-                  sentence.trim().isEmpty ? '' : sentence.trim().split(" ").last
-                ).map((suggestion) {
-                  return ActionChip(
-                    label: Text(suggestion),
-                    onPressed: () {
-                      setState(() {
-                        sentence += suggestion + " ";
-                      });
-                    },
+                children: (() {
+                  final predictedWords = getSuggestions(
+                    sentence.trim().isEmpty ? '' : sentence.trim().split(" ").last
                   );
-                }).toList(),
+                  return predictedWords.map((word) {
+                    return ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          sentence += " $word";
+                        });
+                      },
+                      child: Text(word),
+                    );
+                  }).toList();
+                })(),
               ),
             Expanded(
               child: GridView.builder(
