@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'child_page.dart';
+import 'services/database_service.dart';
 
 class DesignPage extends StatefulWidget {
   final String childName;
@@ -19,6 +21,7 @@ class DesignPage extends StatefulWidget {
 class _DesignPageState extends State<DesignPage> {
   Map<String, List<Map<String, dynamic>>> categories = {};
   TextEditingController controller = TextEditingController();
+  final User? user = FirebaseAuth.instance.currentUser;
 
   @override
   void initState() {
@@ -44,8 +47,15 @@ class _DesignPageState extends State<DesignPage> {
         return {'text': e['text'], 'icon': iconData.codePoint};
       }).toList();
     });
+    
+    // Save to SharedPreferences for offline speed
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('vocab', jsonEncode(serializable));
+
+    // Save to Firestore for cloud sync
+    if (user != null) {
+      await DatabaseService(uid: user!.uid).saveVocabulary(serializable);
+    }
   }
 
   void addWord() {
