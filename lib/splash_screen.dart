@@ -46,12 +46,14 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> loadAndNavigate() async {
-    // Check if Firebase actually initialized
+    final startTime = DateTime.now();
+    
+    Widget nextScreen = RegistrationPage();
+
     if (isFirebaseInitialized) {
       try {
         User? user = FirebaseAuth.instance.currentUser;
         if (user != null) {
-          // User is logged in, fetch from Firestore
           DocumentSnapshot userDoc = await DatabaseService(uid: user.uid).getUserDoc();
           if (userDoc.exists) {
             Map<String, dynamic> data = userDoc.data() as Map<String, dynamic>;
@@ -74,36 +76,32 @@ class _SplashScreenState extends State<SplashScreen>
               });
             }
 
-            Timer(Duration(seconds: 3), () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => DesignPage(
-                    childName: childName,
-                    selectedLanguage: language,
-                    ageRange: ageRange,
-                    initialCategories: categories,
-                  ),
-                ),
-              );
-            });
-            return;
+            nextScreen = DesignPage(
+              childName: childName,
+              selectedLanguage: language,
+              ageRange: ageRange,
+              initialCategories: categories,
+            );
           }
         }
       } catch (e) {
         print("Firebase fetching error in splash: $e");
       }
-    } else {
-      print("Skipping Firebase auto-login: App is in offline mode.");
     }
 
-    // Default to Registration
-    Timer(Duration(seconds: 3), () {
+    final elapsed = DateTime.now().difference(startTime).inMilliseconds;
+    final remaining = 2500 - elapsed;
+    
+    if (remaining > 0) {
+      await Future.delayed(Duration(milliseconds: remaining));
+    }
+
+    if (mounted) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => RegistrationPage()),
+        MaterialPageRoute(builder: (context) => nextScreen),
       );
-    });
+    }
   }
 
   @override

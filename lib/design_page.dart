@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'child_page.dart';
+import 'profile_page.dart';
 import 'services/database_service.dart';
 
 class DesignPage extends StatefulWidget {
@@ -361,19 +362,38 @@ class _DesignPageState extends State<DesignPage> {
                         Text(
                           "Design Vocabulary",
                           style: GoogleFonts.poppins(
-                            fontSize: 22,
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF2D3B89),
                           ),
                         ),
                         Text(
-                          "Customize words for ${widget.childName}",
+                          "Customizing for ${widget.childName}",
                           style: GoogleFonts.poppins(
-                            fontSize: 12,
+                            fontSize: 10,
                             color: Color(0xFFA3AED0),
                           ),
                         ),
                       ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => ProfilePage())),
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0xFF2D3B89).withOpacity(0.08),
+                            blurRadius: 10,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Icon(Icons.person_outline, color: Color(0xFF2D3B89), size: 22),
                     ),
                   ),
                 ],
@@ -567,7 +587,8 @@ class _DesignPageState extends State<DesignPage> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  onPressed: () {
+                  onPressed: () async {
+                    await saveCategories();
                     Navigator.push(
                       context,
                       MaterialPageRoute(

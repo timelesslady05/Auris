@@ -66,6 +66,14 @@ class _RegistrationPageState extends State<RegistrationPage> {
     );
   }
 
+  bool _isLoading = false;
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -114,6 +122,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   child: Column(
                     children: [
                       TextFormField(
+                        enabled: !_isLoading,
                         decoration: _styledInput("Child Name", Icons.child_care),
                         style: GoogleFonts.poppins(color: Color(0xFF2D3B89)),
                         validator: (val) => val!.isEmpty ? 'Enter a name' : null,
@@ -128,7 +137,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                                   child: Text(age, style: GoogleFonts.poppins(color: Color(0xFF2D3B89))),
                                 ))
                             .toList(),
-                        onChanged: (value) => ageRange = value.toString(),
+                        onChanged: _isLoading ? null : (value) => setState(() => ageRange = value.toString()),
                         decoration: _styledInput("Age Range", Icons.cake),
                         dropdownColor: Colors.white,
                       ),
@@ -144,7 +153,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                           DropdownMenuItem(value: "de", child: Text("German", style: GoogleFonts.poppins(color: Color(0xFF2D3B89)))),
                           DropdownMenuItem(value: "it", child: Text("Italian", style: GoogleFonts.poppins(color: Color(0xFF2D3B89)))),
                         ],
-                        onChanged: (value) {
+                        onChanged: _isLoading ? null : (value) {
                           setState(() {
                             selectedLanguage = value!;
                           });
@@ -152,6 +161,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                       ),
                       SizedBox(height: 16),
                       TextFormField(
+                        enabled: !_isLoading,
                         decoration: _styledInput("Email", Icons.email_outlined),
                         style: GoogleFonts.poppins(color: Color(0xFF2D3B89)),
                         keyboardType: TextInputType.emailAddress,
@@ -160,6 +170,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                       ),
                       SizedBox(height: 16),
                       TextFormField(
+                        enabled: !_isLoading,
                         decoration: _styledInput("Password", Icons.lock_outline),
                         style: GoogleFonts.poppins(color: Color(0xFF2D3B89)),
                         obscureText: true,
@@ -174,7 +185,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                 // Continue button
                 SizedBox(
                   width: double.infinity,
-                  height: 56,
+                  height: 58,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Color(0xFF2D3B89),
@@ -182,23 +193,16 @@ class _RegistrationPageState extends State<RegistrationPage> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      elevation: 6,
-                      shadowColor: Color(0xFF2D3B89).withOpacity(0.4),
                     ),
-                    child: Text(
-                      "Continue",
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    onPressed: () async {
+                    onPressed: _isLoading ? null : () async {
                       if (_formKey.currentState!.validate()) {
                         _formKey.currentState!.save();
+                        setState(() => _isLoading = true);
                         
                         dynamic result = await _auth.signUpWithEmail(email, password);
-                        if (result != null) {
-                          String uid = result.user.uid;
+                        
+                        if (result is UserCredential) {
+                          String uid = result.user!.uid;
                           await DatabaseService(uid: uid).updateUserData(
                             name: name,
                             ageRange: ageRange,
@@ -210,26 +214,39 @@ class _RegistrationPageState extends State<RegistrationPage> {
                           await prefs.setString('saved_language', selectedLanguage);
                           await prefs.setString('ageRange', ageRange);
 
-                          Navigator.push(
+                          Navigator.pushAndRemoveUntil(
                             context,
                             MaterialPageRoute(
-                              builder: (context) =>
-                                  DesignPage(childName: name, selectedLanguage: selectedLanguage, ageRange: ageRange, initialCategories: initialCategories),
+                              builder: (context) => DesignPage(
+                                childName: name, 
+                                selectedLanguage: selectedLanguage, 
+                                ageRange: ageRange, 
+                                initialCategories: initialCategories
+                              ),
                             ),
+                            (route) => false,
                           );
                         } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("Registration Failed. Try again.")),
-                          );
+                          setState(() => _isLoading = false);
+                          _showError(result.toString());
                         }
                       }
                     },
+                    child: _isLoading 
+                      ? SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : Text(
+                        "Continue",
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                   ),
                 ),
                 SizedBox(height: 20),
                 Center(
                   child: TextButton(
-                    onPressed: () {
+                    onPressed: _isLoading ? null : () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (context) => LoginPage()),

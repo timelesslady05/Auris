@@ -108,10 +108,86 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 SizedBox(height: 28),
 
+  bool _isLoading = false;
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: 50),
+                Text(
+                  "Welcome Back! 👋",
+                  style: GoogleFonts.poppins(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2D3B89),
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  "Sign in to continue using Auris",
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: Color(0xFFA3AED0),
+                  ),
+                ),
+                SizedBox(height: 40),
+
+                // Main card
+                Container(
+                  padding: EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0xFF2D3B89).withOpacity(0.08),
+                        blurRadius: 30,
+                        offset: Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      TextFormField(
+                        enabled: !_isLoading,
+                        decoration: _styledInput("Email", Icons.email_outlined),
+                        style: GoogleFonts.poppins(color: Color(0xFF2D3B89)),
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (val) => val!.isEmpty ? 'Enter an email' : null,
+                        onSaved: (value) => email = value ?? '',
+                      ),
+                      SizedBox(height: 16),
+                      TextFormField(
+                        enabled: !_isLoading,
+                        decoration: _styledInput("Password", Icons.lock_outline),
+                        style: GoogleFonts.poppins(color: Color(0xFF2D3B89)),
+                        obscureText: true,
+                        validator: (val) => val!.isEmpty ? 'Enter your password' : null,
+                        onSaved: (value) => password = value ?? '',
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 28),
+
                 // Login button
                 SizedBox(
                   width: double.infinity,
-                  height: 56,
+                  height: 58,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Color(0xFF2D3B89),
@@ -119,22 +195,15 @@ class _LoginPageState extends State<LoginPage> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      elevation: 6,
                     ),
-                    child: Text(
-                      "Login",
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    onPressed: () async {
+                    onPressed: _isLoading ? null : () async {
                       if (_formKey.currentState!.validate()) {
                         _formKey.currentState!.save();
+                        setState(() => _isLoading = true);
                         
                         dynamic result = await _auth.signInWithEmail(email, password);
-                        if (result != null) {
-                          String uid = result.user.uid;
+                        if (result is UserCredential) {
+                          String uid = result.user!.uid;
                           DocumentSnapshot userDoc = await DatabaseService(uid: uid).getUserDoc();
                           
                           if (userDoc.exists) {
@@ -156,6 +225,10 @@ class _LoginPageState extends State<LoginPage> {
                                 }).toList();
                                 categories![cat] = List<Map<String, dynamic>>.from(items);
                               });
+                              
+                              // Persist vocabulary locally
+                              SharedPreferences prefs = await SharedPreferences.getInstance();
+                              await prefs.setString('vocab', jsonEncode(vocabData));
                             }
                             
                             SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -163,7 +236,7 @@ class _LoginPageState extends State<LoginPage> {
                             await prefs.setString('saved_language', language);
                             await prefs.setString('ageRange', ageRange);
 
-                            Navigator.push(
+                            Navigator.pushAndRemoveUntil(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => DesignPage(
@@ -173,21 +246,33 @@ class _LoginPageState extends State<LoginPage> {
                                   initialCategories: categories,
                                 ),
                               ),
+                              (route) => false,
                             );
+                          } else {
+                            setState(() => _isLoading = false);
+                            _showError("User profile not found.");
                           }
                         } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("Login Failed. Check credentials.")),
-                          );
+                          setState(() => _isLoading = false);
+                          _showError(result.toString());
                         }
                       }
                     },
+                    child: _isLoading 
+                      ? SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : Text(
+                        "Login",
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                   ),
                 ),
                 SizedBox(height: 20),
                 Center(
                   child: TextButton(
-                    onPressed: () {
+                    onPressed: _isLoading ? null : () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (context) => RegistrationPage()),
