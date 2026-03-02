@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:convert';
 import 'services/auth_service.dart';
 import 'services/database_service.dart';
 import 'design_page.dart';
@@ -18,6 +20,13 @@ class _LoginPageState extends State<LoginPage> {
 
   String email = '';
   String password = '';
+  bool _isLoading = false;
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
+    );
+  }
 
   InputDecoration _styledInput(String label, IconData icon) {
     return InputDecoration(
@@ -39,80 +48,6 @@ class _LoginPageState extends State<LoginPage> {
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide(color: Color(0xFF4A90E2), width: 2),
       ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(height: 50),
-                Text(
-                  "Welcome Back! 👋",
-                  style: GoogleFonts.poppins(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2D3B89),
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  "Sign in to continue using Auris",
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: Color(0xFFA3AED0),
-                  ),
-                ),
-                SizedBox(height: 40),
-
-                // Main card
-                Container(
-                  padding: EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Color(0xFF2D3B89).withOpacity(0.08),
-                        blurRadius: 30,
-                        offset: Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      TextFormField(
-                        decoration: _styledInput("Email", Icons.email_outlined),
-                        style: GoogleFonts.poppins(color: Color(0xFF2D3B89)),
-                        keyboardType: TextInputType.emailAddress,
-                        validator: (val) => val!.isEmpty ? 'Enter an email' : null,
-                        onSaved: (value) => email = value ?? '',
-                      ),
-                      SizedBox(height: 16),
-                      TextFormField(
-                        decoration: _styledInput("Password", Icons.lock_outline),
-                        style: GoogleFonts.poppins(color: Color(0xFF2D3B89)),
-                        obscureText: true,
-                        validator: (val) => val!.isEmpty ? 'Enter your password' : null,
-                        onSaved: (value) => password = value ?? '',
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 28),
-
-  bool _isLoading = false;
-
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
     );
   }
 
