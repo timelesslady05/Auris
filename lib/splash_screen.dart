@@ -9,6 +9,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'registration_page.dart';
 import 'design_page.dart';
 import 'services/database_service.dart';
+import 'main.dart'; // Import to access isFirebaseInitialized
 
 class SplashScreen extends StatefulWidget {
   @override
@@ -45,47 +46,55 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> loadAndNavigate() async {
-    User? user = FirebaseAuth.instance.currentUser;
+    // Check if Firebase actually initialized
+    if (isFirebaseInitialized) {
+      try {
+        User? user = FirebaseAuth.instance.currentUser;
+        if (user != null) {
+          // User is logged in, fetch from Firestore
+          DocumentSnapshot userDoc = await DatabaseService(uid: user.uid).getUserDoc();
+          if (userDoc.exists) {
+            Map<String, dynamic> data = userDoc.data() as Map<String, dynamic>;
+            String childName = data['name'] ?? '';
+            String ageRange = data['ageRange'] ?? '0-3';
+            String language = data['language'] ?? 'en';
+            Map<String, dynamic>? vocabData = data['vocabulary'];
 
-    if (user != null) {
-      // User is logged in, fetch from Firestore
-      DocumentSnapshot userDoc = await DatabaseService(uid: user.uid).getUserDoc();
-      if (userDoc.exists) {
-        Map<String, dynamic> data = userDoc.data() as Map<String, dynamic>;
-        String childName = data['name'] ?? '';
-        String ageRange = data['ageRange'] ?? '0-3';
-        String language = data['language'] ?? 'en';
-        Map<String, dynamic>? vocabData = data['vocabulary'];
+            Map<String, List<Map<String, dynamic>>>? categories;
+            if (vocabData != null) {
+              categories = {};
+              vocabData.forEach((cat, list) {
+                final items = (list as List).map((e) {
+                  return {
+                    'text': e['text'],
+                    'icon': IconData(e['icon'] as int, fontFamily: 'MaterialIcons')
+                  };
+                }).toList();
+                categories![cat] = List<Map<String, dynamic>>.from(items);
+              });
+            }
 
-        Map<String, List<Map<String, dynamic>>>? categories;
-        if (vocabData != null) {
-          categories = {};
-          vocabData.forEach((cat, list) {
-            final items = (list as List).map((e) {
-              return {
-                'text': e['text'],
-                'icon': IconData(e['icon'] as int, fontFamily: 'MaterialIcons')
-              };
-            }).toList();
-            categories![cat] = List<Map<String, dynamic>>.from(items);
-          });
+            Timer(Duration(seconds: 3), () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DesignPage(
+                    childName: childName,
+                    selectedLanguage: language,
+                    ageRange: ageRange,
+                    initialCategories: categories,
+                  ),
+                ),
+              );
+            });
+            return;
+          }
         }
-
-        Timer(Duration(seconds: 3), () {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => DesignPage(
-                childName: childName,
-                selectedLanguage: language,
-                ageRange: ageRange,
-                initialCategories: categories,
-              ),
-            ),
-          );
-        });
-        return;
+      } catch (e) {
+        print("Firebase fetching error in splash: $e");
       }
+    } else {
+      print("Skipping Firebase auto-login: App is in offline mode.");
     }
 
     // Default to Registration

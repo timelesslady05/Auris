@@ -1,15 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'splash_screen.dart';
+
+bool isFirebaseInitialized = false;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Try to load .env file
   try {
-    await Firebase.initializeApp();
+    await dotenv.load(fileName: ".env");
   } catch (e) {
-    print("Firebase initialization failed: This might be because google-services.json is missing.");
+    print("No .env file found. Using default or local configuration.");
+  }
+
+  try {
+    // If .env contains variables, we can initialize Firebase manually (Dart-only initialization)
+    if (dotenv.env['FIREBASE_API_KEY'] != null && dotenv.env['FIREBASE_PROJECT_ID'] != null) {
+      await Firebase.initializeApp(
+        options: FirebaseOptions(
+          apiKey: dotenv.env['FIREBASE_API_KEY']!,
+          appId: dotenv.env['FIREBASE_APP_ID']!,
+          messagingSenderId: dotenv.env['FIREBASE_MESSAGING_SENDER_ID']!,
+          projectId: dotenv.env['FIREBASE_PROJECT_ID']!,
+          storageBucket: dotenv.env['FIREBASE_STORAGE_BUCKET'],
+        ),
+      );
+    } else {
+      // Default initialization (requires google-services.json on Android)
+      await Firebase.initializeApp();
+    }
+    isFirebaseInitialized = true;
+  } catch (e) {
+    print("Firebase initialization failed: This might be because google-services.json or .env credentials are missing.");
     print("Continuing in Offline Mode for now...");
+    isFirebaseInitialized = false;
   }
   runApp(AurisApp());
 }

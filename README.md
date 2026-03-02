@@ -19,26 +19,22 @@ Auris is a supportive Augmentative and Alternative Communication (AAC) Flutter a
 * **Text-to-Speech:** [flutter_tts](https://pub.dev/packages/flutter_tts)
 * **Typography:** [Google Fonts (Poppins)](https://fonts.google.com/specimen/Poppins)
 
-## 🔥 Firebase Integration Guide (Step-by-Step)
-To connect the project with your own Firebase instance, follow these steps:
+## 🔥 Firebase Integration (Step-by-Step)
+You can connect the project to Firebase in two ways:
 
-1. **Create Firebase Project:**
-   * Go to [Firebase Console](https://console.firebase.google.com/).
-   * Create a new project named "Auris".
-2. **Setup Authentication:**
-   * Navigate to **Build > Authentication**.
-   * Enable the **Email/Password** sign-in method.
-3. **Setup Database:**
-   * Navigate to **Build > Firestore Database**.
-   * Create a database in **Test Mode** (or update rules later).
-4. **Register App:**
-   * Click the Android icon to add an app.
-   * Enter the Package Name: `com.example.auris_app`.
-5. **Download Config File:**
-   * Download `google-services.json`.
-   * Move it to `android/app/google-services.json`.
-6. **Initialize Firebase:**
-   * The app is pre-configured to initialize Firebase in `main.dart`. Ensure you run `flutter pub get` to fetch dependencies.
+### Option A: Standard (Recommended for Android/iOS)
+1. **Create Firebase Project:** [Firebase Console](https://console.firebase.google.com/).
+2. **Download Config File:** Download `google-services.json`.
+3. **Place File:** Move it to `android/app/google-services.json`.
+4. **Enable Plugin:** Uncomment the `google-services` plugin on line 7 of `android/app/build.gradle.kts`.
+
+### Option B: .env (Great for quick setup/Web/Desktop)
+1. Open the `.env` file at the root.
+2. Fill in your Firebase Project details (API Key, Project ID, App ID, etc.).
+3. The app will automatically try to initialize using these values if they are provided.
+
+> [!NOTE]
+> For security, the `.env` and `google-services.json` files are automatically excluded from your Git commits in your `.gitignore`.
 
 ## 🚀 How to Run the Project
 1. **Clone the project:**
