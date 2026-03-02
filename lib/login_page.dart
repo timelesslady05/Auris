@@ -142,6 +142,21 @@ class _LoginPageState extends State<LoginPage> {
                             String name = data['name'] ?? '';
                             String ageRange = data['ageRange'] ?? '0-3';
                             String language = data['language'] ?? 'en';
+                            Map<String, dynamic>? vocabData = data['vocabulary'];
+
+                            Map<String, List<Map<String, dynamic>>>? categories;
+                            if (vocabData != null) {
+                              categories = {};
+                              vocabData.forEach((cat, list) {
+                                final items = (list as List).map((e) {
+                                  return {
+                                    'text': e['text'],
+                                    'icon': IconData(e['icon'] as int, fontFamily: 'MaterialIcons')
+                                  };
+                                }).toList();
+                                categories![cat] = List<Map<String, dynamic>>.from(items);
+                              });
+                            }
                             
                             SharedPreferences prefs = await SharedPreferences.getInstance();
                             await prefs.setString('selectedLanguage', language);
@@ -151,7 +166,12 @@ class _LoginPageState extends State<LoginPage> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => DesignPage(childName: name, selectedLanguage: language, ageRange: ageRange),
+                                builder: (context) => DesignPage(
+                                  childName: name, 
+                                  selectedLanguage: language, 
+                                  ageRange: ageRange,
+                                  initialCategories: categories,
+                                ),
                               ),
                             );
                           }
