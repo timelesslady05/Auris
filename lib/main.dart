@@ -5,7 +5,12 @@ import 'splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    print("Firebase initialization failed: This might be because google-services.json is missing.");
+    print("Continuing in Offline Mode for now...");
+  }
   runApp(AurisApp());
 }
 
