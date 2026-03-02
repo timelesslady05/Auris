@@ -12,6 +12,7 @@ void main() async {
   // Try to load .env file
   try {
     await dotenv.load(fileName: ".env");
+    print("Firebase API Key loaded: ${dotenv.env['FIREBASE_API_KEY']}");
   } catch (e) {
     print("No .env file found. Using default or local configuration.");
   }
