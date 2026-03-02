@@ -6,6 +6,7 @@ import 'design_page.dart';
 import 'login_page.dart';
 import 'services/auth_service.dart';
 import 'services/database_service.dart';
+import 'app_strings.dart';
 
 class RegistrationPage extends StatefulWidget {
   final String? initialSelectedLanguage;
@@ -75,6 +76,10 @@ class _RegistrationPageState extends State<RegistrationPage> {
     );
   }
 
+  String _getStr(String key) {
+    return appStrings[selectedLanguage]?[key] ?? appStrings["en"]![key]!;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -89,7 +94,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                 SizedBox(height: 20),
                 // Header
                 Text(
-                  "Welcome! 👋",
+                   _getStr("welcome"),
                   style: GoogleFonts.poppins(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -98,7 +103,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  "Let's set up your child's profile",
+                  _getStr("login_msg"),
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     color: Color(0xFFA3AED0),
@@ -124,7 +129,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     children: [
                       TextFormField(
                         enabled: !_isLoading,
-                        decoration: _styledInput("Child Name", Icons.child_care),
+                        decoration: _styledInput(_getStr("name"), Icons.child_care),
                         style: GoogleFonts.poppins(color: Color(0xFF2D3B89)),
                         validator: (val) => val!.isEmpty ? 'Enter a name' : null,
                         onSaved: (value) => name = value ?? '',
@@ -139,13 +144,13 @@ class _RegistrationPageState extends State<RegistrationPage> {
                                 ))
                             .toList(),
                         onChanged: _isLoading ? null : (value) => setState(() => ageRange = value.toString()),
-                        decoration: _styledInput("Age Range", Icons.cake),
+                        decoration: _styledInput(_getStr("age"), Icons.cake),
                         dropdownColor: Colors.white,
                       ),
                       SizedBox(height: 16),
                       DropdownButtonFormField<String>(
                         value: selectedLanguage,
-                        decoration: _styledInput("Select Language", Icons.language),
+                        decoration: _styledInput(_getStr("language"), Icons.language),
                         dropdownColor: Colors.white,
                         items: [
                           DropdownMenuItem(value: "en", child: Text("English", style: GoogleFonts.poppins(color: Color(0xFF2D3B89)))),
@@ -163,7 +168,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                       SizedBox(height: 16),
                       TextFormField(
                         enabled: !_isLoading,
-                        decoration: _styledInput("Email", Icons.email_outlined),
+                        decoration: _styledInput(_getStr("email"), Icons.email_outlined),
                         style: GoogleFonts.poppins(color: Color(0xFF2D3B89)),
                         keyboardType: TextInputType.emailAddress,
                         validator: (val) => val!.isEmpty ? 'Enter an email' : null,
@@ -236,7 +241,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     child: _isLoading 
                       ? SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                       : Text(
-                        "Continue",
+                        _getStr("register"),
                         style: GoogleFonts.poppins(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,

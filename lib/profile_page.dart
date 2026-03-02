@@ -130,6 +130,10 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    String _getStr(String key) {
+      return appStrings[selectedLanguage]?[key] ?? appStrings["en"]![key]!;
+    }
+
     if (_isLoading) {
       return Scaffold(body: Center(child: CircularProgressIndicator()));
     }
@@ -137,7 +141,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       backgroundColor: Color(0xFFF4F7FE),
       appBar: AppBar(
-        title: Text(appStrings[currentLanguage]?["profile"] ?? "Profile"),
+        title: Text(_getStr("profile")),
         automaticallyImplyLeading: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -187,7 +191,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               SizedBox(height: 32),
 
-              _sectionTitle("Account Information"),
+              _sectionTitle(_getStr("account_info")),
               Container(
                 padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -198,14 +202,14 @@ class _ProfilePageState extends State<ProfilePage> {
                   children: [
                     TextFormField(
                       controller: _nameController,
-                      decoration: _styledInput("Displayed Name", Icons.badge),
+                      decoration: _styledInput(_getStr("name"), Icons.badge),
                       style: GoogleFonts.poppins(fontSize: 15, color: Color(0xFF2D3B89)),
                     ),
                     SizedBox(height: 16),
                     TextFormField(
                       initialValue: user?.email ?? "Not logged in",
                       readOnly: true,
-                      decoration: _styledInput("Email Address (Locked)", Icons.email),
+                      decoration: _styledInput(_getStr("email"), Icons.email),
                       style: GoogleFonts.poppins(fontSize: 15, color: Color(0xFFA3AED0)),
                     ),
                   ],
@@ -213,7 +217,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               SizedBox(height: 24),
 
-              _sectionTitle("Configuration"),
+              _sectionTitle(_getStr("configuration")),
               Container(
                 padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -224,7 +228,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   children: [
                     DropdownButtonFormField<String>(
                       value: selectedAge,
-                      decoration: _styledInput("Child Age Range", Icons.cake),
+                      decoration: _styledInput(_getStr("age"), Icons.cake),
                       dropdownColor: Colors.white,
                       items: ["0-3", "4-6", "7-9", "10-13", "14-16"].map((val) => 
                         DropdownMenuItem(value: val, child: Text(val, style: GoogleFonts.poppins(fontSize: 15)))
@@ -234,7 +238,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     SizedBox(height: 16),
                     DropdownButtonFormField<String>(
                       value: selectedLanguage,
-                      decoration: _styledInput("Native Language", Icons.language),
+                      decoration: _styledInput(_getStr("language"), Icons.language),
                       dropdownColor: Colors.white,
                       items: ["en", "fr", "es", "de", "it"].map((val) => 
                         DropdownMenuItem(value: val, child: Text(val == "en" ? "English" : val.toUpperCase(), style: GoogleFonts.poppins(fontSize: 15)))
@@ -246,7 +250,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               SizedBox(height: 24),
 
-              _sectionTitle("More Options"),
+              _sectionTitle(_getStr("more_options")),
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -254,13 +258,13 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 child: Column(
                   children: [
-                    _buildOptionTile(Icons.info_outline, "About Auris"),
+                    _buildOptionTile(Icons.info_outline, _getStr("about")),
                     Divider(height: 1, indent: 60),
-                    _buildOptionTile(Icons.privacy_tip_outlined, "Privacy Policy"),
+                    _buildOptionTile(Icons.privacy_tip_outlined, _getStr("privacy")),
                     Divider(height: 1, indent: 60),
-                    _buildOptionTile(Icons.help_outline, "Help & Support"),
+                    _buildOptionTile(Icons.help_outline, _getStr("help")),
                     Divider(height: 1, indent: 60),
-                    _buildOptionTile(Icons.logout, "Sign Out", 
+                    _buildOptionTile(Icons.logout, _getStr("sign_out"), 
                       color: Colors.redAccent,
                       onTap: () async {
                         await _auth.signOut();
@@ -307,7 +311,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       )));
                     }
                   },
-                  child: Text("Save & Continue", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+                  child: Text(_getStr("save"), style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
                 ),
               ),
               SizedBox(height: 20),
@@ -318,3 +322,4 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 }
+

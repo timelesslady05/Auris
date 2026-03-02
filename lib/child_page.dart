@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:convert';
 import 'profile_page.dart';
+import 'app_strings.dart';
 
 class ChildPage extends StatefulWidget {
   final Map<String, List<Map<String, dynamic>>>? categories;
@@ -25,7 +27,7 @@ class _ChildPageState extends State<ChildPage> {
   FlutterTts flutterTts = FlutterTts();
 
   Map<String, List<Map<String, dynamic>>> categories = {};
-  String currentLanguage = "en-US";
+  String currentLanguage = "en";
   String sentence = "";
   final TextEditingController _textController = TextEditingController();
 
@@ -36,6 +38,8 @@ class _ChildPageState extends State<ChildPage> {
       categories = {'General': widget.words!};
     } else if (widget.categories != null) {
       categories = widget.categories!;
+    } else {
+      _loadVocab();
     }
     loadLanguage();
 
@@ -57,6 +61,27 @@ class _ChildPageState extends State<ChildPage> {
   void _updateText(String newText) {
     _textController.text = newText;
     _textController.selection = TextSelection.fromPosition(TextPosition(offset: _textController.text.length));
+  }
+
+  Future<void> _loadVocab() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? vocabStr = prefs.getString('vocab');
+    if (vocabStr != null) {
+      Map<String, dynamic> vocabData = jsonDecode(vocabStr);
+      Map<String, List<Map<String, dynamic>>> decoded = {};
+      vocabData.forEach((cat, list) {
+        final items = (list as List).map((e) {
+          return {
+            'text': e['text'],
+            'icon': IconData(e['icon'] as int, fontFamily: 'MaterialIcons')
+          };
+        }).toList();
+        decoded[cat] = List<Map<String, dynamic>>.from(items);
+      });
+      setState(() {
+        categories = decoded;
+      });
+    }
   }
 
   void addToSentence(String word) {
@@ -107,13 +132,28 @@ class _ChildPageState extends State<ChildPage> {
     }
   }
 
+  String _getStr(String key) {
+    return appStrings[currentLanguage]?[key] ?? appStrings["en"]![key]!;
+  }
+
   Future<void> loadLanguage() async {
     final prefs = await SharedPreferences.getInstance();
-    String? savedLang = prefs.getString("saved_language") ?? prefs.getString("selectedLanguage");
-    if (savedLang != null) {
-      currentLanguage = savedLang;
+    String? savedLang = prefs.getString("saved_language") ?? prefs.getString("selectedLanguage") ?? "en";
+    
+    setState(() {
+      currentLanguage = savedLang!;
+    });
+
+    String ttsLocale = "en-US";
+    switch (currentLanguage) {
+      case "fr": ttsLocale = "fr-FR"; break;
+      case "es": ttsLocale = "es-ES"; break;
+      case "de": ttsLocale = "de-DE"; break;
+      case "it": ttsLocale = "it-IT"; break;
+      default: ttsLocale = "en-US";
     }
-    await flutterTts.setLanguage(currentLanguage);
+
+    await flutterTts.setLanguage(ttsLocale);
     await flutterTts.setSpeechRate(0.4);
     await flutterTts.setPitch(1.0);
   }
@@ -170,7 +210,7 @@ class _ChildPageState extends State<ChildPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "${widget.childName}'s Board",
+                          "${widget.childName}'s ${_getStr("board")}",
                           style: GoogleFonts.poppins(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -178,7 +218,7 @@ class _ChildPageState extends State<ChildPage> {
                           ),
                         ),
                         Text(
-                          "Communication Board",
+                          _getStr("comm_board"),
                           style: GoogleFonts.poppins(
                             fontSize: 10,
                             color: Color(0xFFA3AED0),
@@ -271,7 +311,7 @@ class _ChildPageState extends State<ChildPage> {
                                 padding: EdgeInsets.symmetric(vertical: 12),
                               ),
                               icon: Icon(Icons.volume_up, size: 20),
-                              label: Text("Speak", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                              label: Text(_getStr("speak"), style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                               onPressed: () => speak(sentence),
                             ),
                           ),
@@ -289,7 +329,7 @@ class _ChildPageState extends State<ChildPage> {
                                 elevation: 0,
                               ),
                               icon: Icon(Icons.clear, size: 20),
-                              label: Text("Clear", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                              label: Text(_getStr("clear"), style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                               onPressed: () {
                                 _textController.clear();
                               },

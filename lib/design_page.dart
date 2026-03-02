@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'child_page.dart';
 import 'profile_page.dart';
 import 'services/database_service.dart';
+import 'app_strings.dart';
 
 class DesignPage extends StatefulWidget {
   final String childName;
@@ -23,6 +24,10 @@ class _DesignPageState extends State<DesignPage> {
   Map<String, List<Map<String, dynamic>>> categories = {};
   TextEditingController controller = TextEditingController();
   final User? user = FirebaseAuth.instance.currentUser;
+
+  String _getStr(String key) {
+    return appStrings[widget.selectedLanguage]?[key] ?? appStrings["en"]![key]!;
+  }
 
   @override
   void initState() {
@@ -360,7 +365,7 @@ class _DesignPageState extends State<DesignPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "Design Vocabulary",
+                          _getStr("design_title"),
                           style: GoogleFonts.poppins(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -368,7 +373,7 @@ class _DesignPageState extends State<DesignPage> {
                           ),
                         ),
                         Text(
-                          "Customizing for ${widget.childName}",
+                          "${_getStr("customizing_for")} ${widget.childName}",
                           style: GoogleFonts.poppins(
                             fontSize: 10,
                             color: Color(0xFFA3AED0),
@@ -425,7 +430,7 @@ class _DesignPageState extends State<DesignPage> {
                         controller: controller,
                         style: GoogleFonts.poppins(color: Color(0xFF2D3B89)),
                         decoration: InputDecoration(
-                          hintText: "Add a new word...",
+                          hintText: _getStr("add_word_hint"),
                           hintStyle: GoogleFonts.poppins(color: Color(0xFFA3AED0)),
                           border: InputBorder.none,
                         ),
@@ -564,6 +569,26 @@ class _DesignPageState extends State<DesignPage> {
               ),
             ),
 
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24),
+              child: TextButton.icon(
+                onPressed: () {
+                  setState(() {
+                    final starters = getStarterWords(widget.ageRange);
+                    final Map<String, List<Map<String, dynamic>>> initial = {};
+                    for (var w in starters) {
+                      final cat = getCategory((w['text'] as String));
+                      initial.putIfAbsent(cat, () => []).add(w);
+                    }
+                    categories = initial;
+                  });
+                  saveCategories();
+                },
+                icon: Icon(Icons.refresh, size: 18),
+                label: Text(_getStr("reset_defaults"), style: GoogleFonts.poppins(fontSize: 13)),
+              ),
+            ),
+
             // Confirm button
             Padding(
               padding: EdgeInsets.all(24),
@@ -581,7 +606,7 @@ class _DesignPageState extends State<DesignPage> {
                     shadowColor: Color(0xFF2D3B89).withOpacity(0.4),
                   ),
                   child: Text(
-                    "Confirm Design",
+                    _getStr("confirm_design"),
                     style: GoogleFonts.poppins(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,

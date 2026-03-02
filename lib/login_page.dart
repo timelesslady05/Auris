@@ -8,6 +8,7 @@ import 'services/auth_service.dart';
 import 'services/database_service.dart';
 import 'design_page.dart';
 import 'registration_page.dart';
+import 'app_strings.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -21,6 +22,24 @@ class _LoginPageState extends State<LoginPage> {
   String email = '';
   String password = '';
   bool _isLoading = false;
+  String selectedLanguage = "en";
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLang();
+  }
+
+  Future<void> _loadLang() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      selectedLanguage = prefs.getString('selectedLanguage') ?? 'en';
+    });
+  }
+
+  String _getStr(String key) {
+    return appStrings[selectedLanguage]?[key] ?? appStrings["en"]![key]!;
+  }
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -64,7 +83,7 @@ class _LoginPageState extends State<LoginPage> {
               children: [
                 SizedBox(height: 50),
                 Text(
-                  "Welcome Back! 👋",
+                  _getStr("welcome"),
                   style: GoogleFonts.poppins(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -73,7 +92,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  "Sign in to continue using Auris",
+                  _getStr("login_msg"),
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     color: Color(0xFFA3AED0),
@@ -99,7 +118,7 @@ class _LoginPageState extends State<LoginPage> {
                     children: [
                       TextFormField(
                         enabled: !_isLoading,
-                        decoration: _styledInput("Email", Icons.email_outlined),
+                        decoration: _styledInput(_getStr("email"), Icons.email_outlined),
                         style: GoogleFonts.poppins(color: Color(0xFF2D3B89)),
                         keyboardType: TextInputType.emailAddress,
                         validator: (val) => val!.isEmpty ? 'Enter an email' : null,
@@ -196,7 +215,7 @@ class _LoginPageState extends State<LoginPage> {
                     child: _isLoading 
                       ? SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                       : Text(
-                        "Login",
+                        _getStr("login"),
                         style: GoogleFonts.poppins(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
