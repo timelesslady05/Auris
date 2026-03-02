@@ -1,49 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'design_page.dart';
-import 'login_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'services/auth_service.dart';
 import 'services/database_service.dart';
+import 'design_page.dart';
+import 'registration_page.dart';
 
-class RegistrationPage extends StatefulWidget {
-  final String? initialSelectedLanguage;
-  final String? initialAgeRange;
-  final Map<String, List<Map<String, dynamic>>>? initialCategories;
-
-  RegistrationPage({this.initialSelectedLanguage, this.initialAgeRange, this.initialCategories});
-
+class LoginPage extends StatefulWidget {
   @override
-  _RegistrationPageState createState() => _RegistrationPageState();
+  _LoginPageState createState() => _LoginPageState();
 }
 
-class _RegistrationPageState extends State<RegistrationPage> {
+class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final AuthService _auth = AuthService();
 
-  String name = '';
-  String ageRange = '0-3';
-  String phone = '';
   String email = '';
   String password = '';
-  String selectedLanguage = "en";
 
-  Map<String, List<Map<String, dynamic>>>? initialCategories;
-
-  final List<String> validLanguages = ["en", "fr", "es", "de", "it"];
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.initialSelectedLanguage != null &&
-        validLanguages.contains(widget.initialSelectedLanguage)) {
-      selectedLanguage = widget.initialSelectedLanguage!;
-    }
-    if (widget.initialAgeRange != null) ageRange = widget.initialAgeRange!;
-    initialCategories = widget.initialCategories;
-  }
-
-  InputDecoration _styledInput(String label, IconData icon, {bool isPassword = false}) {
+  InputDecoration _styledInput(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
       prefixIcon: Icon(icon, color: Color(0xFF4A90E2)),
@@ -77,10 +53,9 @@ class _RegistrationPageState extends State<RegistrationPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: 20),
-                // Header
+                SizedBox(height: 50),
                 Text(
-                  "Welcome! 👋",
+                  "Welcome Back! 👋",
                   style: GoogleFonts.poppins(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -89,13 +64,13 @@ class _RegistrationPageState extends State<RegistrationPage> {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  "Let's set up your child's profile",
+                  "Sign in to continue using Auris",
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     color: Color(0xFFA3AED0),
                   ),
                 ),
-                SizedBox(height: 32),
+                SizedBox(height: 40),
 
                 // Main card
                 Container(
@@ -114,44 +89,6 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   child: Column(
                     children: [
                       TextFormField(
-                        decoration: _styledInput("Child Name", Icons.child_care),
-                        style: GoogleFonts.poppins(color: Color(0xFF2D3B89)),
-                        validator: (val) => val!.isEmpty ? 'Enter a name' : null,
-                        onSaved: (value) => name = value ?? '',
-                      ),
-                      SizedBox(height: 16),
-                      DropdownButtonFormField(
-                        value: ageRange,
-                        items: ["0-3", "4-6", "7-9", "10-13", "14-16"]
-                            .map((age) => DropdownMenuItem(
-                                  value: age,
-                                  child: Text(age, style: GoogleFonts.poppins(color: Color(0xFF2D3B89))),
-                                ))
-                            .toList(),
-                        onChanged: (value) => ageRange = value.toString(),
-                        decoration: _styledInput("Age Range", Icons.cake),
-                        dropdownColor: Colors.white,
-                      ),
-                      SizedBox(height: 16),
-                      DropdownButtonFormField<String>(
-                        value: selectedLanguage,
-                        decoration: _styledInput("Select Language", Icons.language),
-                        dropdownColor: Colors.white,
-                        items: [
-                          DropdownMenuItem(value: "en", child: Text("English", style: GoogleFonts.poppins(color: Color(0xFF2D3B89)))),
-                          DropdownMenuItem(value: "fr", child: Text("French", style: GoogleFonts.poppins(color: Color(0xFF2D3B89)))),
-                          DropdownMenuItem(value: "es", child: Text("Spanish", style: GoogleFonts.poppins(color: Color(0xFF2D3B89)))),
-                          DropdownMenuItem(value: "de", child: Text("German", style: GoogleFonts.poppins(color: Color(0xFF2D3B89)))),
-                          DropdownMenuItem(value: "it", child: Text("Italian", style: GoogleFonts.poppins(color: Color(0xFF2D3B89)))),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            selectedLanguage = value!;
-                          });
-                        },
-                      ),
-                      SizedBox(height: 16),
-                      TextFormField(
                         decoration: _styledInput("Email", Icons.email_outlined),
                         style: GoogleFonts.poppins(color: Color(0xFF2D3B89)),
                         keyboardType: TextInputType.emailAddress,
@@ -163,7 +100,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                         decoration: _styledInput("Password", Icons.lock_outline),
                         style: GoogleFonts.poppins(color: Color(0xFF2D3B89)),
                         obscureText: true,
-                        validator: (val) => val!.length < 6 ? 'Enter a password 6+ chars long' : null,
+                        validator: (val) => val!.isEmpty ? 'Enter your password' : null,
                         onSaved: (value) => password = value ?? '',
                       ),
                     ],
@@ -171,7 +108,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                 ),
                 SizedBox(height: 28),
 
-                // Continue button
+                // Login button
                 SizedBox(
                   width: double.infinity,
                   height: 56,
@@ -183,10 +120,9 @@ class _RegistrationPageState extends State<RegistrationPage> {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       elevation: 6,
-                      shadowColor: Color(0xFF2D3B89).withOpacity(0.4),
                     ),
                     child: Text(
-                      "Continue",
+                      "Login",
                       style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -196,30 +132,32 @@ class _RegistrationPageState extends State<RegistrationPage> {
                       if (_formKey.currentState!.validate()) {
                         _formKey.currentState!.save();
                         
-                        dynamic result = await _auth.signUpWithEmail(email, password);
+                        dynamic result = await _auth.signInWithEmail(email, password);
                         if (result != null) {
                           String uid = result.user.uid;
-                          await DatabaseService(uid: uid).updateUserData(
-                            name: name,
-                            ageRange: ageRange,
-                            language: selectedLanguage,
-                          );
+                          DocumentSnapshot userDoc = await DatabaseService(uid: uid).getUserDoc();
+                          
+                          if (userDoc.exists) {
+                            Map<String, dynamic> data = userDoc.data() as Map<String, dynamic>;
+                            String name = data['name'] ?? '';
+                            String ageRange = data['ageRange'] ?? '0-3';
+                            String language = data['language'] ?? 'en';
+                            
+                            SharedPreferences prefs = await SharedPreferences.getInstance();
+                            await prefs.setString('selectedLanguage', language);
+                            await prefs.setString('saved_language', language);
+                            await prefs.setString('ageRange', ageRange);
 
-                          SharedPreferences prefs = await SharedPreferences.getInstance();
-                          await prefs.setString('selectedLanguage', selectedLanguage);
-                          await prefs.setString('saved_language', selectedLanguage);
-                          await prefs.setString('ageRange', ageRange);
-
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  DesignPage(childName: name, selectedLanguage: selectedLanguage, ageRange: ageRange, initialCategories: initialCategories),
-                            ),
-                          );
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => DesignPage(childName: name, selectedLanguage: language, ageRange: ageRange),
+                              ),
+                            );
+                          }
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("Registration Failed. Try again.")),
+                            SnackBar(content: Text("Login Failed. Check credentials.")),
                           );
                         }
                       }
@@ -232,16 +170,16 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => LoginPage()),
+                        MaterialPageRoute(builder: (context) => RegistrationPage()),
                       );
                     },
                     child: RichText(
                       text: TextSpan(
-                        text: "Already have an account? ",
+                        text: "Don't have an account? ",
                         style: GoogleFonts.poppins(color: Color(0xFFA3AED0)),
                         children: [
                           TextSpan(
-                            text: "Login",
+                            text: "Register",
                             style: GoogleFonts.poppins(
                               color: Color(0xFF4A90E2),
                               fontWeight: FontWeight.bold,
@@ -252,7 +190,6 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     ),
                   ),
                 ),
-                SizedBox(height: 20),
               ],
             ),
           ),
