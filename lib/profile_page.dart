@@ -19,36 +19,51 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   final AuthService _auth = AuthService();
   final User? user = FirebaseAuth.instance.currentUser;
+  final _formKey = GlobalKey<FormState>();
 
+  late TextEditingController _nameController;
   String currentLanguage = "en";
   String selectedLanguage = "en";
   String selectedAge = "0-3";
-  String userName = "Profile";
-  List<Map<String, dynamic>> words = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    _nameController = TextEditingController(text: "User");
     loadProfile();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
   }
 
   Future<void> loadProfile() async {
     if (user != null) {
-      DocumentSnapshot userDoc = await DatabaseService(uid: user!.uid).getUserDoc();
-      if (userDoc.exists) {
-        Map<String, dynamic> data = userDoc.data() as Map<String, dynamic>;
-        setState(() {
-          userName = data['name'] ?? 'Profile';
-          selectedAge = data['ageRange'] ?? '0-3';
-          selectedLanguage = data['language'] ?? 'en';
-          currentLanguage = selectedLanguage;
-        });
-        
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString("saved_language", selectedLanguage);
-        await prefs.setString("selectedLanguage", selectedLanguage);
-        await prefs.setString("ageRange", selectedAge);
+      try {
+        DocumentSnapshot userDoc = await DatabaseService(uid: user!.uid).getUserDoc();
+        if (userDoc.exists) {
+          Map<String, dynamic> data = userDoc.data() as Map<String, dynamic>;
+          setState(() {
+            _nameController.text = data['name'] ?? 'User';
+            selectedAge = data['ageRange'] ?? '0-3';
+            selectedLanguage = data['language'] ?? 'en';
+            currentLanguage = selectedLanguage;
+          });
+          
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString("saved_language", selectedLanguage);
+          await prefs.setString("ageRange", selectedAge);
+        }
+      } catch (e) {
+        print("Error loading profile: $e");
+      } finally {
+        setState(() => _isLoading = false);
       }
+    } else {
+      setState(() => _isLoading = false);
     }
   }
 
@@ -57,8 +72,9 @@ class _ProfilePageState extends State<ProfilePage> {
       labelText: label,
       prefixIcon: Icon(icon, color: Color(0xFF4A90E2)),
       filled: true,
-      fillColor: Colors.white,
-      labelStyle: GoogleFonts.poppins(color: Color(0xFFA3AED0)),
+      fillColor: Color(0xFFF4F7FE),
+      labelStyle: GoogleFonts.poppins(color: Color(0xFFA3AED0), fontSize: 14),
+      floatingLabelStyle: GoogleFonts.poppins(color: Color(0xFF4A90E2), fontWeight: FontWeight.w600),
       contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
@@ -70,261 +86,228 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: Color(0xFF4A90E2), width: 2),
+        borderSide: BorderSide(color: Color(0xFF4A90E2), width: 1.5),
       ),
+    );
+  }
+
+  Widget _sectionTitle(String title) {
+    return Padding(
+      padding: EdgeInsets.only(left: 4, bottom: 12),
+      child: Text(
+        title,
+        style: GoogleFonts.poppins(
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+          color: Color(0xFF2D3B89),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOptionTile(IconData icon, String title, {VoidCallback? onTap, Color color = const Color(0xFF2D3B89)}) {
+    return ListTile(
+      onTap: onTap,
+      leading: Container(
+        padding: EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, color: color, size: 20),
+      ),
+      title: Text(
+        title,
+        style: GoogleFonts.poppins(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: Color(0xFF2D3B89),
+        ),
+      ),
+      trailing: Icon(Icons.chevron_right, color: Color(0xFFA3AED0), size: 18),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      backgroundColor: Color(0xFFF4F7FE),
+      appBar: AppBar(
+        title: Text(appStrings[currentLanguage]?["profile"] ?? "Profile"),
+        automaticallyImplyLeading: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(24),
+        child: Form(
+          key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(height: 12),
-              // Header
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      width: 44,
-                      height: 44,
+              // Avatar
+              Center(
+                child: Stack(
+                  children: [
+                    Container(
+                      width: 100,
+                      height: 100,
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF2D3B89), Color(0xFF4A90E2)],
+                        ),
+                        shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Color(0xFF2D3B89).withOpacity(0.08),
-                            blurRadius: 10,
-                            offset: Offset(0, 4),
+                            color: Color(0xFF4A90E2).withOpacity(0.3),
+                            blurRadius: 15,
+                            offset: Offset(0, 8),
                           ),
                         ],
                       ),
-                      child: Icon(Icons.arrow_back_ios_new,
-                          color: Color(0xFF2D3B89), size: 18),
+                      child: Icon(Icons.person, size: 50, color: Colors.white),
                     ),
-                  ),
-                  SizedBox(width: 16),
-                  Text(
-                    appStrings[currentLanguage]!["profile"]!,
-                    style: GoogleFonts.poppins(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF2D3B89),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 32),
-
-              // Profile avatar section
-              Center(
-                child: Container(
-                  width: 90,
-                  height: 90,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF2D3B89), Color(0xFF4A90E2)],
-                    ),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Color(0xFF4A90E2).withOpacity(0.3),
-                        blurRadius: 20,
-                        offset: Offset(0, 8),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        padding: EdgeInsets.all(4),
+                        decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                        child: Icon(Icons.edit, size: 18, color: Color(0xFF4A90E2)),
                       ),
-                    ],
-                  ),
-                  child: Icon(Icons.person, size: 45, color: Colors.white),
-                ),
-              ),
-              SizedBox(height: 32),
-
-              // Settings card
-              Container(
-                padding: EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Color(0xFF2D3B89).withOpacity(0.08),
-                      blurRadius: 30,
-                      offset: Offset(0, 10),
                     ),
                   ],
                 ),
+              ),
+              SizedBox(height: 32),
+
+              _sectionTitle("Account Information"),
+              Container(
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      "Settings",
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF2D3B89),
-                      ),
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: _styledInput("Displayed Name", Icons.badge),
+                      style: GoogleFonts.poppins(fontSize: 15, color: Color(0xFF2D3B89)),
                     ),
-                    SizedBox(height: 20),
+                    SizedBox(height: 16),
+                    TextFormField(
+                      initialValue: user?.email ?? "Not logged in",
+                      readOnly: true,
+                      decoration: _styledInput("Email Address (Locked)", Icons.email),
+                      style: GoogleFonts.poppins(fontSize: 15, color: Color(0xFFA3AED0)),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 24),
+
+              _sectionTitle("Configuration"),
+              Container(
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Column(
+                  children: [
                     DropdownButtonFormField<String>(
                       value: selectedAge,
-                      decoration: _styledInput(
-                          appStrings[currentLanguage]!["age"]!, Icons.cake),
+                      decoration: _styledInput("Child Age Range", Icons.cake),
                       dropdownColor: Colors.white,
-                      items: [
-                        DropdownMenuItem(value: "0-3", child: Text("0-3", style: GoogleFonts.poppins(color: Color(0xFF2D3B89)))),
-                        DropdownMenuItem(value: "4-6", child: Text("4-6", style: GoogleFonts.poppins(color: Color(0xFF2D3B89)))),
-                        DropdownMenuItem(value: "7-9", child: Text("7-9", style: GoogleFonts.poppins(color: Color(0xFF2D3B89)))),
-                        DropdownMenuItem(value: "10-13", child: Text("10-13", style: GoogleFonts.poppins(color: Color(0xFF2D3B89)))),
-                        DropdownMenuItem(value: "14-16", child: Text("14-16", style: GoogleFonts.poppins(color: Color(0xFF2D3B89)))),
-                      ],
-                      onChanged: (value) {
-                        setState(() {
-                          selectedAge = value!;
-                        });
-                      },
+                      items: ["0-3", "4-6", "7-9", "10-13", "14-16"].map((val) => 
+                        DropdownMenuItem(value: val, child: Text(val, style: GoogleFonts.poppins(fontSize: 15)))
+                      ).toList(),
+                      onChanged: (v) => setState(() => selectedAge = v!),
                     ),
                     SizedBox(height: 16),
                     DropdownButtonFormField<String>(
                       value: selectedLanguage,
-                      decoration: _styledInput(
-                          appStrings[currentLanguage]!["language"]!,
-                          Icons.language),
+                      decoration: _styledInput("Native Language", Icons.language),
                       dropdownColor: Colors.white,
-                      items: [
-                        DropdownMenuItem(value: "en", child: Text("English", style: GoogleFonts.poppins(color: Color(0xFF2D3B89)))),
-                        DropdownMenuItem(value: "fr", child: Text("French", style: GoogleFonts.poppins(color: Color(0xFF2D3B89)))),
-                        DropdownMenuItem(value: "es", child: Text("Spanish", style: GoogleFonts.poppins(color: Color(0xFF2D3B89)))),
-                        DropdownMenuItem(value: "de", child: Text("German", style: GoogleFonts.poppins(color: Color(0xFF2D3B89)))),
-                        DropdownMenuItem(value: "it", child: Text("Italian", style: GoogleFonts.poppins(color: Color(0xFF2D3B89)))),
-                      ],
-                      onChanged: (value) {
-                        setState(() {
-                          selectedLanguage = value!;
-                        });
-                      },
+                      items: ["en", "fr", "es", "de", "it"].map((val) => 
+                        DropdownMenuItem(value: val, child: Text(val == "en" ? "English" : val.toUpperCase(), style: GoogleFonts.poppins(fontSize: 15)))
+                      ).toList(),
+                      onChanged: (v) => setState(() => selectedLanguage = v!),
                     ),
                   ],
                 ),
               ),
-              SizedBox(height: 28),
+              SizedBox(height: 24),
 
-              // Save button
+              _sectionTitle("More Options"),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Column(
+                  children: [
+                    _buildOptionTile(Icons.info_outline, "About Auris"),
+                    Divider(height: 1, indent: 60),
+                    _buildOptionTile(Icons.privacy_tip_outlined, "Privacy Policy"),
+                    Divider(height: 1, indent: 60),
+                    _buildOptionTile(Icons.help_outline, "Help & Support"),
+                    Divider(height: 1, indent: 60),
+                    _buildOptionTile(Icons.logout, "Sign Out", 
+                      color: Colors.redAccent,
+                      onTap: () async {
+                        await _auth.signOut();
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.clear();
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(builder: (context) => RegistrationPage()), (r) => false
+                        );
+                      }
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 32),
+
               SizedBox(
                 width: double.infinity,
-                height: 56,
+                height: 58,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF2D3B89),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    elevation: 6,
-                    shadowColor: Color(0xFF2D3B89).withOpacity(0.4),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                   ),
                   onPressed: () async {
                     if (user != null) {
                       await DatabaseService(uid: user!.uid).updateUserData(
-                        name: userName, // Using existing or potentially updated name
+                        name: _nameController.text,
                         ageRange: selectedAge,
                         language: selectedLanguage,
                       );
-                    }
+                      
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.setString("saved_language", selectedLanguage);
+                      await prefs.setString("selectedLanguage", selectedLanguage);
+                      await prefs.setString("ageRange", selectedAge);
 
-                    final prefs = await SharedPreferences.getInstance();
-                    String oldLang = prefs.getString("saved_language") ?? "en";
-                    String oldAge = prefs.getString("ageRange") ?? "0-3";
-                    
-                    bool changed = (oldLang != selectedLanguage || oldAge != selectedAge);
-
-                    await prefs.setString("saved_language", selectedLanguage);
-                    await prefs.setString("selectedLanguage", selectedLanguage); // keep consistent
-                    await prefs.setString("ageRange", selectedAge);
-
-                    if (changed) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => DesignPage(
-                            childName: userName,
-                            selectedLanguage: selectedLanguage,
-                            ageRange: selectedAge,
-                          ),
-                        ),
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Profile updated successfully!"), backgroundColor: Color(0xFF2D3B89))
                       );
-                    } else {
-                      String? savedVocab = prefs.getString('vocab');
-                      Map<String, List<Map<String, dynamic>>>? categories;
-                      if (savedVocab != null) {
-                        final Map<String, dynamic> decoded = jsonDecode(savedVocab);
-                        final Map<String, List<Map<String, dynamic>>> loaded = {};
-                        decoded.forEach((cat, list) {
-                          final items = (list as List).map((e) {
-                            return {
-                              'text': e['text'],
-                              'icon': IconData(e['icon'] as int, fontFamily: 'MaterialIcons')
-                            };
-                          }).toList();
-                          loaded[cat] = List<Map<String, dynamic>>.from(items);
-                        });
-                        categories = loaded;
-                      }
-
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ChildPage(
-                            categories: categories,
-                            childName: userName,
-                            ageRange: selectedAge,
-                          ),
-                        ),
-                      );
+                      
+                      Navigator.push(context, MaterialPageRoute(builder: (c) => ChildPage(
+                        childName: _nameController.text,
+                        ageRange: selectedAge,
+                      )));
                     }
                   },
-                  child: Text(
-                    appStrings[currentLanguage]!["save"]!,
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(height: 16),
-              // Sign Out button
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.redAccent,
-                    side: BorderSide(color: Colors.redAccent.withOpacity(0.5)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  onPressed: () async {
-                    await _auth.signOut();
-                    final prefs = await SharedPreferences.getInstance();
-                    await prefs.clear();
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (context) => RegistrationPage()),
-                      (route) => false,
-                    );
-                  },
-                  child: Text(
-                    "Sign Out",
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  child: Text("Save & Continue", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
                 ),
               ),
               SizedBox(height: 20),

@@ -18,24 +18,11 @@ void main() async {
   }
 
   try {
-    // If .env contains variables, we can initialize Firebase manually (Dart-only initialization)
-    if (dotenv.env['FIREBASE_API_KEY'] != null && dotenv.env['FIREBASE_PROJECT_ID'] != null) {
-      await Firebase.initializeApp(
-        options: FirebaseOptions(
-          apiKey: dotenv.env['FIREBASE_API_KEY']!,
-          appId: dotenv.env['FIREBASE_APP_ID']!,
-          messagingSenderId: dotenv.env['FIREBASE_MESSAGING_SENDER_ID']!,
-          projectId: dotenv.env['FIREBASE_PROJECT_ID']!,
-          storageBucket: dotenv.env['FIREBASE_STORAGE_BUCKET'],
-        ),
-      );
-    } else {
-      // Default initialization (requires google-services.json on Android)
-      await Firebase.initializeApp();
-    }
+    await Firebase.initializeApp();
     isFirebaseInitialized = true;
+    print("Firebase initialized successfully using google-services.json");
   } catch (e) {
-    print("Firebase initialization failed: This might be because google-services.json or .env credentials are missing.");
+    print("Firebase initialization failed: $e");
     print("Continuing in Offline Mode for now...");
     isFirebaseInitialized = false;
   }
