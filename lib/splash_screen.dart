@@ -4,7 +4,11 @@ import 'dart:convert';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'registration_page.dart';
+import 'design_page.dart';
+import 'services/database_service.dart';
 
 class SplashScreen extends StatefulWidget {
   @override
@@ -41,36 +45,54 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> loadAndNavigate() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? saved = prefs.getString('vocab');
-    Map<String, List<Map<String, dynamic>>>? categories;
-    if (saved != null) {
-      final Map<String, dynamic> decoded = jsonDecode(saved);
-      final Map<String, List<Map<String, dynamic>>> loaded = {};
-      decoded.forEach((cat, list) {
-        final items = (list as List).map((e) {
-          return {
-            'text': e['text'],
-            'icon': IconData(e['icon'] as int, fontFamily: 'MaterialIcons')
-          };
-        }).toList();
-        loaded[cat] = List<Map<String, dynamic>>.from(items);
-      });
-      categories = loaded;
+    User? user = FirebaseAuth.instance.currentUser;
+
+    if (user != null) {
+      // User is logged in, fetch from Firestore
+      DocumentSnapshot userDoc = await DatabaseService(uid: user.uid).getUserDoc();
+      if (userDoc.exists) {
+        Map<String, dynamic> data = userDoc.data() as Map<String, dynamic>;
+        String childName = data['name'] ?? '';
+        String ageRange = data['ageRange'] ?? '0-3';
+        String language = data['language'] ?? 'en';
+        Map<String, dynamic>? vocabData = data['vocabulary'];
+
+        Map<String, List<Map<String, dynamic>>>? categories;
+        if (vocabData != null) {
+          categories = {};
+          vocabData.forEach((cat, list) {
+            final items = (list as List).map((e) {
+              return {
+                'text': e['text'],
+                'icon': IconData(e['icon'] as int, fontFamily: 'MaterialIcons')
+              };
+            }).toList();
+            categories![cat] = List<Map<String, dynamic>>.from(items);
+          });
+        }
+
+        Timer(Duration(seconds: 3), () {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => DesignPage(
+                childName: childName,
+                selectedLanguage: language,
+                ageRange: ageRange,
+                initialCategories: categories,
+              ),
+            ),
+          );
+        });
+        return;
+      }
     }
 
-    final selLang = prefs.getString('selectedLanguage') ?? 'en';
-    final age = prefs.getString('ageRange') ?? '0-3';
-
+    // Default to Registration
     Timer(Duration(seconds: 3), () {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-            builder: (context) => RegistrationPage(
-                  initialSelectedLanguage: selLang,
-                  initialAgeRange: age,
-                  initialCategories: categories,
-                )),
+        MaterialPageRoute(builder: (context) => RegistrationPage()),
       );
     });
   }

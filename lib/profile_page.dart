@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:convert';
 import 'app_strings.dart';
 import 'child_page.dart';
 import 'design_page.dart';
+import 'registration_page.dart';
+import 'services/auth_service.dart';
+import 'services/database_service.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -12,25 +17,38 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  final AuthService _auth = AuthService();
+  final User? user = FirebaseAuth.instance.currentUser;
+
   String currentLanguage = "en";
   String selectedLanguage = "en";
   String selectedAge = "0-3";
+  String userName = "Profile";
   List<Map<String, dynamic>> words = [];
 
   @override
   void initState() {
     super.initState();
-    loadLanguage();
+    loadProfile();
   }
 
-  Future<void> loadLanguage() async {
-    final prefs = await SharedPreferences.getInstance();
-    String? saved = prefs.getString("saved_language");
-    if (saved != null) {
-      setState(() {
-        currentLanguage = saved;
-        selectedLanguage = saved;
-      });
+  Future<void> loadProfile() async {
+    if (user != null) {
+      DocumentSnapshot userDoc = await DatabaseService(uid: user!.uid).getUserDoc();
+      if (userDoc.exists) {
+        Map<String, dynamic> data = userDoc.data() as Map<String, dynamic>;
+        setState(() {
+          userName = data['name'] ?? 'Profile';
+          selectedAge = data['ageRange'] ?? '0-3';
+          selectedLanguage = data['language'] ?? 'en';
+          currentLanguage = selectedLanguage;
+        });
+        
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString("saved_language", selectedLanguage);
+        await prefs.setString("selectedLanguage", selectedLanguage);
+        await prefs.setString("ageRange", selectedAge);
+      }
     }
   }
 
@@ -210,6 +228,14 @@ class _ProfilePageState extends State<ProfilePage> {
                     shadowColor: Color(0xFF2D3B89).withOpacity(0.4),
                   ),
                   onPressed: () async {
+                    if (user != null) {
+                      await DatabaseService(uid: user!.uid).updateUserData(
+                        name: userName, // Using existing or potentially updated name
+                        ageRange: selectedAge,
+                        language: selectedLanguage,
+                      );
+                    }
+
                     final prefs = await SharedPreferences.getInstance();
                     String oldLang = prefs.getString("saved_language") ?? "en";
                     String oldAge = prefs.getString("ageRange") ?? "0-3";
@@ -225,7 +251,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => DesignPage(
-                            childName: 'Profile',
+                            childName: userName,
                             selectedLanguage: selectedLanguage,
                             ageRange: selectedAge,
                           ),
@@ -254,7 +280,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         MaterialPageRoute(
                           builder: (context) => ChildPage(
                             categories: categories,
-                            childName: 'Profile',
+                            childName: userName,
                             ageRange: selectedAge,
                           ),
                         ),
@@ -270,6 +296,38 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
               ),
+              SizedBox(height: 16),
+              // Sign Out button
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.redAccent,
+                    side: BorderSide(color: Colors.redAccent.withOpacity(0.5)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  onPressed: () async {
+                    await _auth.signOut();
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.clear();
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (context) => RegistrationPage()),
+                      (route) => false,
+                    );
+                  },
+                  child: Text(
+                    "Sign Out",
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 20),
             ],
           ),
         ),
