@@ -10,8 +10,8 @@ Auris is a supportive Augmentative and Alternative Communication (AAC) Flutter a
 > Placeholder for demo link and screenshots. Adding dummy data for now.
 * [Demo Video Link](https://drive.google.com/file/d/1qgzfJ4_5TnzNi5yrR3sAf8V4zv--CBfx/view?usp=drivesdk)
 * ![Screenshot 1](https://drive.google.com/file/d/1iJtpd9UkzdcqnTqLxiDtmuMhambYpDOa/view?usp=drivesdk)
-* ![Screenshot 1](https://drive.google.com/file/d/1ljiHPU0HrT-TtitgYJN145AjiYYsKhW2/view?usp=drivesdk))
-* ![Screenshot 3](https://drive.google.com/file/d/1PSp4MSqnJ7lmE_RuwfqhrGMfaybw3CrP/view?usp=drivesdk))
+* ![Screenshot 2](https://drive.google.com/file/d/1ljiHPU0HrT-TtitgYJN145AjiYYsKhW2/view?usp=drivesdk)
+* ![Screenshot 3](https://drive.google.com/file/d/1PSp4MSqnJ7lmE_RuwfqhrGMfaybw3CrP/view?usp=drivesdk)
 ## 🛠 Technical Stack
 * **Framework:** [Flutter](https://flutter.dev/) (v3.11.0+)
 * **Language:** [Dart](https://dart.dev/)
