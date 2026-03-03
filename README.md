@@ -8,8 +8,8 @@ Auris is a supportive Augmentative and Alternative Communication (AAC) Flutter a
 
 ## 📸 Demo & Screenshots
 > Placeholder for demo link and screenshots. Adding dummy data for now.
-* [Demo Video Link](#)
-* ![Screenshot 1](https://via.placeholder.com/200x400?text=Splash+Screen) ![Screenshot 2](https://via.placeholder.com/200x400?text=Child+Board)
+* [Demo Video Link](https://drive.google.com/file/d/1qgzfJ4_5TnzNi5yrR3sAf8V4zv--CBfx/view?usp=drivesdk)
+* ![Screenshot Folder](https://drive.google.com/drive/folders/1kQ28uC6b3Cy3u2ExwRGeZ-ugo0GQ8_2F)
 
 ## 🛠 Technical Stack
 * **Framework:** [Flutter](https://flutter.dev/) (v3.11.0+)
